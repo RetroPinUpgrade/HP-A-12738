@@ -1,0 +1,35 @@
+.program AutoClearLatch
+.wrap_target
+    // Wait for the MPU to read 0x3FDD (DATA_OUT_OC on GPIO12 goes LOW)
+    wait 0 pin 0
+    
+    // Drive DATA_OUT_LATCH (GPIO11) LOW to clear the ready flag on CD0
+    set pins, 0
+
+    // Wait for the read cycle to finish (DATA_OUT_OC goes HIGH) so we don't re-trigger
+    wait 1 pin 0
+.wrap
+
+% c-sdk {
+static inline void AutoClearLatchProgramInit(PIO pio, uint sm, uint offset, uint pinLatch, uint pinWait) {
+    pio_sm_config c = AutoClearLatch_program_get_default_config(offset);
+    
+    // Configure SET pin for DATA_OUT_LATCH
+    sm_config_set_set_pins(&c, pinLatch, 1);
+    
+    // Configure IN pin for DATA_OUT_OC
+    sm_config_set_in_pins(&c, pinWait);
+    
+    // Initialize the GPIO hardware for the PIO
+    pio_gpio_init(pio, pinLatch);
+    pio_gpio_init(pio, pinWait);
+    
+    // Set pin directions
+    pio_sm_set_consecutive_pindirs(pio, sm, pinLatch, 1, true);
+    pio_sm_set_consecutive_pindirs(pio, sm, pinWait, 1, false);
+    
+    // Initialize and enable state machine
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}

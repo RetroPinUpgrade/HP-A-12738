@@ -1,0 +1,15 @@
+.program audio_i2s
+.side_set 2
+
+public entry_point:
+bitloop0:
+    out pins, 1       side 0b00  // BCLK=0, LRCK=0 (Left Channel)
+    jmp x-- bitloop0  side 0b01  
+    out pins, 1       side 0b10  
+    set x, 14         side 0b11  
+
+bitloop1:
+    out pins, 1       side 0b10  // BCLK=0, LRCK=1 (Right Channel)
+    jmp x-- bitloop1  side 0b11
+    out pins, 1       side 0b00  
+    set x, 14         side 0b01
