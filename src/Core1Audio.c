@@ -208,11 +208,15 @@ void Core1Main(void) {
     int32_t newMainVolume = g_mainVolume;
 
     g_core1Alive = true;
+    uint8_t loopToggle = 1;
 
     // Register this core to automatically pause when Core 0 requests a lockout
     //multicore_lockout_victim_init();
 
     while (true) {
+        gpio_put(24, loopToggle);
+        loopToggle ^= 1;
+
         // 1. Process 68B09 writes instantaneously
         while (multicore_fifo_rvalid()) {
             uint32_t cmd = multicore_fifo_pop_blocking();
@@ -265,8 +269,8 @@ void Core1Main(void) {
 
             // Apply the master volume 
             // (which is a value between 0-127)
-            mixedL = (mixedL * stabilizedMainVolume)>>8;
-            mixedR = (mixedR * stabilizedMainVolume)>>8;
+            mixedL = (mixedL * stabilizedMainVolume)>>10;
+            mixedR = (mixedR * stabilizedMainVolume)>>10;
 
             // Apply the soft-knee limiter
             int16_t finalL = (int16_t)ApplySoftKnee(mixedL);
